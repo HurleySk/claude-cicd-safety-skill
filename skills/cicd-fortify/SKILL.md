@@ -16,7 +16,7 @@ You (Orchestrator)
  ├─► Sentinel Agent (thorough, opus/sonnet)
  │    ├─► Scout Agent 1 (haiku, fast recon)
  │    ├─► Scout Agent 2 (haiku, fast recon)
- │    └─► ... up to 5 concurrent scouts
+ │    └─► ... up to 3 concurrent scouts
  │
  ├─► Read assessment.md
  ├─► Work through open questions with user

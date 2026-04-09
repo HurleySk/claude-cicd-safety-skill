@@ -188,12 +188,16 @@ COMMAND=$(echo "$INPUT" | node -e "
 
 if echo "$COMMAND" | grep -qE 'git push --force|git push -f'; then
   echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Force push is not allowed"}}'
-elif echo "$COMMAND" | grep -qE 'git push|git merge'; then
-  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"Confirm: push/merge operation"}}'
+elif echo "$COMMAND" | grep -qE 'git push'; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"Confirm: push operation"}}'
 else
   exit 0
 fi
 ```
+
+**Optional additions — ask the user before including these:**
+- `git merge` confirmation: Useful but may override prior approvals if the user already approved the merge elsewhere. Only add if the user explicitly requests it.
+- `git reset --hard` blocking: Prevents destructive resets. Recommended for most projects.
 
 #### Step 8: Wire Up settings.json
 
