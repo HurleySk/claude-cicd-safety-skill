@@ -36,6 +36,22 @@ Set up Claude Code PreToolUse hooks that intercept file writes and block dangero
 2. **LLM prompt hook** — Semantic backstop. Catches subtle issues the script misses.
 3. **Bash confirmation** — Confirms destructive git operations.
 
+### `cicd-fortify` — Automated CI/CD Safety Assessment
+
+Dispatches a **Sentinel** agent that deeply analyzes your project's CI/CD posture, using **Scout** agents for fast reconnaissance. Produces a comprehensive assessment with risks, recommendations, and open questions.
+
+| Command | Description |
+|---------|-------------|
+| `/cicd-safety:cicd-fortify assess` | Full Sentinel/Scout assessment of your project |
+| `/cicd-safety:cicd-fortify help` | Show available commands |
+
+**How it works:**
+1. **Sentinel** (expert agent) analyzes: environments, deployment paths, safety hooks, risky directories, prod indicators, branch protection
+2. **Scouts** (fast haiku agents) gather specific facts in parallel
+3. Sentinel produces `output/cicd-fortify-assessment.md` with findings and plan
+4. You work through open questions with the orchestrator
+5. Implementation via `safety-hooks setup` skill
+
 ## License
 
 MIT
