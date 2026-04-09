@@ -147,6 +147,9 @@ Check for:
 5. **Config table dangers**: INSERT/DELETE on config tables without proper WHERE clauses or environment scoping
 6. **Protected branch violations**: Changes targeting main/master directly
 7. **Dangerous step combinations**: Deploying config changes and immediately executing pipelines without review
+8. **Cross-tier resource duplication** (CRITICAL): A resource whose name or URI contains an environment indicator (e.g., "prod", "prd", "dev", "staging", "uat") assigned to a tier that doesn't match — for example, `my-service-prod.example.com` under `environment = "dev"`. This almost always means a copy-paste error.
+9. **Shared resources across prod and non-prod** (WARNING): The same URI, connection string, or endpoint appears under both a production tier and a non-production tier. This means a dev/test pipeline run could mutate production data.
+10. **Single resource serving many tiers** (INFO): One resource identifier is assigned to 3 or more environment tiers. This may be intentional (shared service) but is worth flagging so the author confirms it.
 
 For each finding, report:
 - File and line
