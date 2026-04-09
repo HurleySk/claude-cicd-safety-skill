@@ -1,22 +1,25 @@
 ---
 name: cicd-fortify
-description: Use when the user wants a comprehensive CI/CD safety assessment of their project — dispatches a Sentinel agent that deeply analyzes the repo for deployment risks, environment misconfigurations, and missing guardrails, then guides the user through remediation.
+description: Use when the user wants a comprehensive CI/CD safety assessment of their project — dispatches Scout and Sentinel agents to analyze the repo for deployment risks, environment misconfigurations, and missing guardrails, then guides the user through remediation.
 argument-hint: "[assess|help]"
 ---
 
 # CI/CD Fortify — Sentinel Assessment
 
-You are the orchestrator for a multi-agent CI/CD safety assessment. You dispatch a Sentinel agent (the master assessor) that deeply analyzes the project, then work through its findings with the user.
+You are the orchestrator for a multi-agent CI/CD safety assessment. You dispatch Scout agents (haiku, fast recon) in parallel to gather facts, then pass their findings to a Sentinel agent (the master assessor) for synthesis. Finally, you work through the Sentinel's findings with the user.
 
 ## Architecture
 
 ```
 You (Orchestrator)
  │
- ├─► Sentinel Agent (thorough, opus/sonnet)
- │    ├─► Scout Agent 1 (haiku, fast recon)
- │    ├─► Scout Agent 2 (haiku, fast recon)
- │    └─► ... up to 3 concurrent scouts
+ ├─► Scout 1 (haiku) — Environment Topology
+ ├─► Scout 2 (haiku) — Deployment Paths & Safety Posture
+ ├─► Scout 3 (haiku) — Risky Dirs, Prod Indicators, Branch Protection
+ │   (all 3 launched in parallel via Agent tool)
+ │
+ ├─► Sentinel Agent (inherits model) — receives Scout findings
+ │   Synthesizes assessment, writes output files
  │
  ├─► Read assessment.md
  ├─► Work through open questions with user
@@ -30,60 +33,130 @@ You (Orchestrator)
 
 Full CI/CD safety assessment. Follow these steps exactly.
 
-#### Step 1: Dispatch the Sentinel
+#### Step 1: Dispatch Scouts
 
-Launch a single Agent with `subagent_type: "general-purpose"` using the Sentinel prompt below. The Sentinel will handle its own Scout dispatches internally.
+Launch **3 Scout agents in parallel** (all in a single message with 3 Agent tool calls). Each Scout is a haiku agent that gathers facts for its assigned domains. Scouts should be fast, factual, and exhaustive — no analysis, just findings.
 
-**Sentinel prompt — copy this verbatim, filling in `{PROJECT_DIR}` with the actual project directory:**
+Fill in `{PROJECT_DIR}` with the actual project directory in each prompt.
+
+**Scout 1 — Environment Topology:**
+
+```
+subagent_type: "general-purpose"
+model: "haiku"
+```
+
+Prompt:
+````
+You are a Scout agent performing fast reconnaissance on the project at {PROJECT_DIR}.
+
+Answer these questions. Be brief and factual — list what you find, no analysis.
+
+1. What environment names, factory names, or connection names exist? Check settings files, config files, connection strings, .env files, CLAUDE.md, and any connections.json.
+2. What URLs, hostnames, or service URIs reference production systems? Search for patterns like 'prod', 'production', '.com', org IDs.
+3. How does the project map environments to deployment targets? Check for factory-to-env mappings, parameter files, global parameters.
+
+Format your response as:
+## Environment Topology Findings
+(your findings, organized by question)
+````
+
+**Scout 2 — Deployment Paths & Safety Posture:**
+
+```
+subagent_type: "general-purpose"
+model: "haiku"
+```
+
+Prompt:
+````
+You are a Scout agent performing fast reconnaissance on the project at {PROJECT_DIR}.
+
+Answer these questions. Be brief and factual — list what you find, no analysis.
+
+1. What CI/CD workflows exist? Check .github/workflows/, .gitlab-ci.yml, Jenkinsfile, azure-pipelines.yml, or similar.
+2. Are there direct-deploy mechanisms (scripts, CLI commands, task files) that bypass CI/CD? Check for deploy scripts, task runners, or shell scripts that push to production.
+3. What is the promotion chain? How do changes flow from dev to prod?
+4. What Claude Code hooks exist in .claude/settings.json? List all PreToolUse and PostToolUse hooks with their matchers and types.
+5. What safety rules are documented in CLAUDE.md or similar instruction files? Look for sections about safety, production, environments, or critical rules.
+6. Are there any .claude/hooks/ scripts? Read each one and describe what it does.
+7. What git hooks exist in .git/hooks/? Which are active (not .sample files)?
+
+Format your response as:
+## Deployment Paths Findings
+(findings for questions 1-3)
+
+## Safety Posture Findings
+(findings for questions 4-7)
+````
+
+**Scout 3 — Risky Directories, Prod Indicators & Branch Protection:**
+
+```
+subagent_type: "general-purpose"
+model: "haiku"
+```
+
+Prompt:
+````
+You are a Scout agent performing fast reconnaissance on the project at {PROJECT_DIR}.
+
+Answer these questions. Be brief and factual — list what you find, no analysis.
+
+1. What directories contain files that could affect live environments if deployed? Look for: SQL scripts, pipeline JSON, Terraform/IaC, Kubernetes manifests, deployment configs, task files.
+2. Are there staging/work-repo directories that mirror production artifacts?
+3. What strings, URIs, GUIDs, connection names, or patterns uniquely identify production resources in this project? Search broadly — config files, SQL, JSON, YAML.
+4. What branches are protected or should be? Check branch policies, CLAUDE.md rules, CI/CD triggers.
+
+Format your response as:
+## Risky Directories Findings
+(findings for questions 1-2)
+
+## Prod Indicator Findings
+(findings for question 3)
+
+## Branch Protection Findings
+(findings for question 4)
+````
+
+#### Step 2: Dispatch the Sentinel
+
+After all 3 Scouts return, collect their findings and launch the Sentinel agent. The Sentinel synthesizes Scout findings into a comprehensive assessment.
+
+Launch a single Agent using the Sentinel prompt below. Fill in `{PROJECT_DIR}` and `{SCOUT_FINDINGS}` (paste the combined output from all 3 Scouts).
+
+```
+subagent_type: "general-purpose"
+```
+
+(No `model` parameter — the Sentinel inherits the dispatcher's model for maximum quality.)
+
+**Sentinel prompt:**
 
 ````
-You are the SENTINEL — a master of correct and safe CI/CD practices. Your mission: rigorously assess this project's CI/CD posture, flag every potential risk, and produce a comprehensive assessment document.
+You are the SENTINEL — a master of correct and safe CI/CD practices. Your mission: synthesize reconnaissance findings into a comprehensive CI/CD safety assessment.
 
 Project directory: {PROJECT_DIR}
 
+## Scout Findings
+
+The following findings were gathered by Scout agents. Use these as your primary data source. You may perform additional investigation if the Scout findings are incomplete or raise follow-up questions, but do not redo work the Scouts already completed.
+
+{SCOUT_FINDINGS}
+
 ## Your Assessment Protocol
 
-Work through each domain below. For each domain, dispatch Scout agents (using the Agent tool with model: "haiku") to quickly gather facts. Scouts should answer ONE specific question each. Launch up to 3 Scouts in parallel when you have independent questions.
+Using the Scout findings above, perform the following synthesis:
 
-**Scout prompt template:**
-"You are a Scout agent. Answer this ONE question about the project at {PROJECT_DIR}. Be brief and factual — just the answer, no analysis. Question: {QUESTION}"
-
-### Domain 1: Environment Topology
-Discover all environments the project interacts with.
-- Scout: "What environment names, factory names, or connection names exist? Check settings files, config files, connection strings, .env files, CLAUDE.md, and any connections.json."
-- Scout: "What URLs, hostnames, or service URIs reference production systems? Search for patterns like 'prod', 'production', '.com', org IDs."
-- Scout: "How does the project map environments to deployment targets? Check for factory-to-env mappings, parameter files, global parameters."
-
-### Domain 2: Deployment Paths
-Understand how code reaches live environments.
-- Scout: "What CI/CD workflows exist? Check .github/workflows/, .gitlab-ci.yml, Jenkinsfile, azure-pipelines.yml, or similar."
-- Scout: "Are there direct-deploy mechanisms (scripts, CLI commands, task files) that bypass CI/CD? Check for deploy scripts, task runners, or shell scripts that push to production."
-- Scout: "What is the promotion chain? How do changes flow from dev to prod?"
-
-### Domain 3: Current Safety Posture
-Evaluate existing guardrails.
-- Scout: "What Claude Code hooks exist in .claude/settings.json? List all PreToolUse and PostToolUse hooks with their matchers and types."
-- Scout: "What safety rules are documented in CLAUDE.md or similar instruction files? Look for sections about safety, production, environments, or critical rules."
-- Scout: "Are there any .claude/hooks/ scripts? Read each one and describe what it does."
-- Scout: "What git hooks exist in .git/hooks/? Which are active (not .sample files)?"
-
-### Domain 4: Risky Directories
-Identify where deployable artifacts live.
-- Scout: "What directories contain files that could affect live environments if deployed? Look for: SQL scripts, pipeline JSON, Terraform/IaC, Kubernetes manifests, deployment configs, task files."
-- Scout: "Are there staging/work-repo directories that mirror production artifacts?"
-
-### Domain 5: Prod Indicator Patterns
-Catalog what identifies production.
-- Scout: "What strings, URIs, GUIDs, connection names, or patterns uniquely identify production resources in this project? Search broadly — config files, SQL, JSON, YAML."
-
-### Domain 6: Branch Protection
-- Scout: "What branches are protected or should be? Check branch policies, CLAUDE.md rules, CI/CD triggers."
-
-### Domain 7: Risk Assessment
-After gathering all Scout reports, synthesize:
+### Risk Assessment
 - What are the highest-risk scenarios? (e.g., "Agent could deploy to prod via task file", "Config change could route dev traffic to prod")
 - What's the blast radius of each? (affects one env, multiple envs, or all envs)
 - What existing mitigations exist? What's missing?
+
+### Gap Analysis
+- Cross-reference deployment paths with safety posture — are all paths covered?
+- Cross-reference prod indicators with hook rules — are all prod resources protected?
+- Identify any environments, paths, or artifacts that lack guardrails.
 
 ## Your Output
 
@@ -151,7 +224,7 @@ This file will be consumed by the `safety-hooks setup` workflow to pre-populate 
 Be thorough. Be rigorous. Miss nothing. You are the last line of defense before an agent accidentally touches production.
 ````
 
-#### Step 2: Read the Assessment
+#### Step 3: Read the Assessment
 
 After the Sentinel returns, read `output/cicd-fortify-assessment.md`.
 
@@ -160,7 +233,7 @@ Summarize the key findings for the user:
 - Top 3 risks
 - Number of open questions
 
-#### Step 3: Work Through Open Questions
+#### Step 4: Work Through Open Questions
 
 For each open question in the assessment, ask the user ONE AT A TIME using AskUserQuestion. Provide the question, why it matters, and offer multiple-choice options where possible.
 
@@ -169,13 +242,13 @@ After each answer:
 2. If the answer changes the risk assessment significantly, note it
 3. Move to the next question
 
-#### Step 4: Re-assess if Needed
+#### Step 5: Re-assess if Needed
 
 If answers materially change the picture (e.g., user reveals a deployment path the Sentinel missed, or an environment the Scouts didn't find), dispatch a follow-up Sentinel with the new context:
 
 "You are the SENTINEL on a follow-up assessment. The initial assessment is at output/cicd-fortify-assessment.md. New information from the user: {ANSWERS}. Update the assessment document with revised findings, risks, and recommendations."
 
-#### Step 5: Present Final Plan
+#### Step 6: Present Final Plan
 
 Once all questions are resolved, present the fortification plan to the user. For each step:
 - What it does
@@ -184,7 +257,7 @@ Once all questions are resolved, present the fortification plan to the user. For
 
 Get user approval before proceeding.
 
-#### Step 6: Implement
+#### Step 7: Implement
 
 For each plan step that involves safety hooks, invoke the safety-hooks skill:
 
@@ -209,9 +282,9 @@ For plan steps that DON'T involve hooks (e.g., adding CLAUDE.md safety rules, fi
 
 **How it works:**
 
-1. A **Sentinel** agent (thorough, expert-level) deeply analyzes your project's CI/CD posture
-2. The Sentinel dispatches **Scout** agents (fast, haiku) for targeted reconnaissance
-3. The Sentinel produces an assessment document with findings, risks, and a plan
+1. Three **Scout** agents (fast, haiku) are dispatched in parallel for targeted reconnaissance across all domains
+2. A **Sentinel** agent (thorough, expert-level) receives Scout findings and synthesizes a comprehensive assessment
+3. The Sentinel produces an assessment document with findings, risks, and a fortification plan
 4. You work through open questions with the orchestrator
 5. The plan is implemented using the `safety-hooks` skill
 
