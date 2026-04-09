@@ -1,6 +1,6 @@
 {
   "name": "cicd-safety",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Claude Code skills for CI/CD safety — Guard pre-commit review agent, Sentinel/Scout assessment, production protection hooks, environment validation, deployment guardrails.",
   "author": {
     "name": "Samuel Hurley",
@@ -9,5 +9,16 @@
   "license": "MIT",
   "homepage": "https://github.com/HurleySk/claude-cicd-safety-skill",
   "repository": "https://github.com/HurleySk/claude-cicd-safety-skill",
-  "keywords": ["cicd", "safety", "hooks", "production", "deployment", "guardrails", "environment", "sentinel", "assessment", "guard"]
+  "keywords": [
+    "cicd",
+    "safety",
+    "hooks",
+    "production",
+    "deployment",
+    "guardrails",
+    "environment",
+    "sentinel",
+    "assessment",
+    "guard"
+  ]
 }
