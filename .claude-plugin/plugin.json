@@ -1,0 +1,13 @@
+{
+  "name": "cicd-safety",
+  "version": "1.0.0",
+  "description": "Claude Code skills for CI/CD safety — production protection hooks, environment validation, deployment guardrails. Set up deterministic and LLM-powered safety gates to prevent agents from accidentally targeting production.",
+  "author": {
+    "name": "Samuel Hurley",
+    "url": "https://github.com/HurleySk"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/HurleySk/claude-cicd-safety-skill",
+  "repository": "https://github.com/HurleySk/claude-cicd-safety-skill",
+  "keywords": ["cicd", "safety", "hooks", "production", "deployment", "guardrails", "environment"]
+}
