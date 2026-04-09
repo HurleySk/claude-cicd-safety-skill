@@ -133,6 +133,21 @@ Items the Sentinel could not determine from the codebase alone. Each question in
 (Raw findings from each Scout, for reference)
 ```
 
+**ALSO** write a machine-readable rules file to `output/cicd-fortify-rules.json` using this schema:
+
+```json
+{
+  "prodIndicators": ["<all discovered prod environment names, factory names, connection names>"],
+  "prodUriPatterns": ["<all discovered production URIs, hostnames, org IDs>"],
+  "riskyDirectories": ["<all directories containing deployable artifacts>"],
+  "riskyPatterns": ["<file glob patterns within risky directories>"],
+  "readOnlyOperations": ["<safe operations that target prod: read-only SQL, status checks>"],
+  "blockedBranches": ["<branches that should not be targeted by automated pushes>"]
+}
+```
+
+This file will be consumed by the `safety-hooks setup` workflow to pre-populate hook configuration. Include only values you are confident about — leave arrays empty rather than guessing.
+
 Be thorough. Be rigorous. Miss nothing. You are the last line of defense before an agent accidentally touches production.
 ````
 
@@ -177,12 +192,7 @@ For each plan step that involves safety hooks, invoke the safety-hooks skill:
 /cicd-safety:safety-hooks setup
 ```
 
-Pass the Sentinel's findings as context so the setup workflow can pre-populate:
-- Environment names and classifications
-- Risky directories
-- Prod indicator patterns
-- Protected branches
-- Read-only operations
+The Sentinel wrote `output/cicd-fortify-rules.json` — pass this file path to the safety-hooks setup so it can pre-populate the configuration. Read the file and use its values to answer the setup wizard's questions (Steps 1-4) without requiring the user to re-enter information the Sentinel already discovered.
 
 The safety-hooks skill will generate the actual hook scripts and wire them into settings.json.
 

@@ -35,15 +35,31 @@ INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | node -e "
   let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{
     try{console.log(JSON.parse(d).tool_input.command||'')}catch{console.log('')}
-  })" 2>/dev/null)
+  })")
 
 # Only trigger on git commit
 if ! echo "$COMMAND" | grep -q 'git commit'; then
   exit 0
 fi
 
-# Check if risky files were in the commit — customize this pattern for your project
-RISKY_FILES=$(git diff HEAD~1 --name-only 2>/dev/null | grep -E '(tasks/.*\.json|work-repo/|work-repo-staging/|deploy/|\.sql$|pipeline/)' | head -5)
+# Load risky patterns from safety-rules.json (single source of truth)
+RULES_FILE="$CLAUDE_PROJECT_DIR/.claude/safety-rules.json"
+if [ -f "$RULES_FILE" ] && command -v node &>/dev/null; then
+  # Build grep pattern from riskyDirectories and riskyPatterns in rules file
+  PATTERN=$(node -e "
+    const r=require('$RULES_FILE');
+    const dirs=(r.riskyDirectories||[]).map(d=>d.replace(/\\/$/,'').replace(/[.*+?^$()|[\\]{}]/g,'\\\\$&')+'/');
+    const pats=(r.riskyPatterns||[]).map(p=>p.replace(/^\*\\./, '\\\\\\\\.')).filter(Boolean);
+    const all=[...dirs,...pats].filter(Boolean);
+    console.log(all.join('|')||'__NO_PATTERN__');
+  ")
+else
+  # Fallback: use a default pattern if rules file is unavailable
+  # CUSTOMIZE THIS for your project if not using safety-rules.json:
+  PATTERN='(deploy/|terraform/|\.sql$|pipeline/)'
+fi
+
+RISKY_FILES=$(git diff HEAD~1 --name-only 2>/dev/null | grep -E "$PATTERN" | head -5)
 
 if [ -n "$RISKY_FILES" ]; then
   echo "⚠️ GUARD: Risky files committed. Run /cicd-safety:guard review to check for safety concerns."
@@ -112,21 +128,25 @@ If there are staged changes, review those. If the last commit was recent, review
 
 Launch an Agent with `model: "haiku"`:
 
-**Guard prompt:**
+**Guard prompt — fill in `{PROJECT_DIR}`. If `.claude/safety-rules.json` exists, also fill in `{PROD_INDICATORS}` and `{PROD_URI_PATTERNS}` from the rules file to give the Guard project-specific context:**
+
 ```
 You are the GUARD — a fast, rigorous safety reviewer for CI/CD changes.
 
 Project: {PROJECT_DIR}
+Production indicators: {PROD_INDICATORS}
+Production URI patterns: {PROD_URI_PATTERNS}
 
 Run `git diff HEAD~1` (or `git diff --cached` for staged changes) and review every changed file.
 
 Check for:
-1. **Environment mismatches**: Prod-named resources (containing "prod", "prd", production URIs) assigned to non-prod environments, or dev resources under prod
-2. **Hardcoded prod values**: Production URIs, connection strings, or GUIDs that should be parameterized
-3. **Unverified deployments**: Deploy steps that aren't preceded by verification steps
-4. **Config table dangers**: INSERT/DELETE on config tables without proper WHERE clauses or environment scoping
-5. **Protected branch violations**: Changes targeting main/master directly
-6. **Dangerous step combinations**: Deploying config changes and immediately executing pipelines without review
+1. **Environment mismatches**: Resources matching the production indicators above assigned to non-prod environments, or dev resources under prod
+2. **Hardcoded prod values**: Production URIs, connection strings, or GUIDs that should be parameterized — especially patterns matching the URI patterns above
+3. **Secret/credential exposure**: API keys (AKIA...), passwords, tokens, private keys written to tracked files
+4. **Unverified deployments**: Deploy steps that aren't preceded by verification steps
+5. **Config table dangers**: INSERT/DELETE on config tables without proper WHERE clauses or environment scoping
+6. **Protected branch violations**: Changes targeting main/master directly
+7. **Dangerous step combinations**: Deploying config changes and immediately executing pipelines without review
 
 For each finding, report:
 - File and line
@@ -138,6 +158,12 @@ If nothing found, report: "CLEAR — no safety concerns in this changeset."
 
 Be thorough but fast. Only flag real issues, not style preferences.
 ```
+
+To populate the Guard prompt, read `.claude/safety-rules.json` and extract:
+- `prodIndicators` array → join as comma-separated string for `{PROD_INDICATORS}`
+- `prodUriPatterns` array → join as comma-separated string for `{PROD_URI_PATTERNS}`
+
+If the rules file doesn't exist, use generic patterns ("prod", "prd", "production") as defaults.
 
 #### Step 3: Report Findings
 
