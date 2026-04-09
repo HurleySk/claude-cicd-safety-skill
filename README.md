@@ -52,6 +52,18 @@ Dispatches a **Sentinel** agent that deeply analyzes your project's CI/CD postur
 4. You work through open questions with the orchestrator
 5. Implementation via `safety-hooks setup` skill
 
+### `guard` — Pre-Commit Safety Review Agent
+
+A haiku-powered Guard agent that reviews git diffs for safety concerns. Triggered by a PostToolUse hook after commits with risky files.
+
+| Command | Description |
+|---------|-------------|
+| `/cicd-safety:guard setup` | Set up the Guard reminder hook |
+| `/cicd-safety:guard review` | Manually run Guard review on current changes |
+| `/cicd-safety:guard help` | Show available commands |
+
+**How it works:** A PostToolUse hook detects commits with risky files and prints a reminder. The agent then invokes `/cicd-safety:guard review`, which dispatches a fast haiku subagent to review the full git diff. Replaces unreliable LLM prompt hooks with a deliberate, agent-dispatched review.
+
 ## License
 
 MIT
