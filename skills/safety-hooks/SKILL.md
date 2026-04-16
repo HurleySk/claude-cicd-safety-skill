@@ -235,7 +235,7 @@ ask() {
 # BAD:  echo "$COMMAND" | grep -qE 'MyTool'
 #   Matches: grep -rn "foo" tools/MyTool.cs  (false positive on read-only!)
 #
-# GOOD: echo "$COMMAND" | grep -qE '(^|[;&|]\s*)MyTool(\s|$)'
+# GOOD: echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)MyTool([[:space:]]|$)'
 #   Only matches when MyTool is the command verb being executed.
 #
 # For built-in checks below, patterns are anchored to command verbs.
@@ -243,26 +243,26 @@ ask() {
 # ============================================================================
 
 # --- Git operations ---
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)git push (--force|--force-with-lease|-f)' && deny "Force push is not allowed"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)git reset --hard' && deny "Hard reset is not allowed"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)git push' && ask "Confirm: git push operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)git push (--force|--force-with-lease|-f)' && deny "Force push is not allowed"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)git reset --hard' && deny "Hard reset is not allowed"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)git push' && ask "Confirm: git push operation"
 
 # --- Destructive file operations ---
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)rm\s+(-[a-zA-Z]*r[a-zA-Z]*f|--recursive)' && ask "Confirm: recursive file deletion"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)rm[[:space:]]+(-[a-zA-Z]*r[a-zA-Z]*f|--recursive)' && ask "Confirm: recursive file deletion"
 
 # --- Cloud/infra CLI — deployments (ask) ---
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)terraform (apply|destroy)' && ask "Confirm: Terraform infrastructure change"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)kubectl (apply|delete|rollout)' && ask "Confirm: Kubernetes cluster operation"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)helm (install|upgrade|uninstall)' && ask "Confirm: Helm chart operation"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)az (webapp deploy|group delete|sql db delete|aks)' && ask "Confirm: Azure resource operation"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)aws (s3 rm|ec2 terminate|cloudformation delete|ecs update-service|lambda update)' && ask "Confirm: AWS resource operation"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)gcloud (app deploy|compute instances delete|sql instances delete|container)' && ask "Confirm: GCP resource operation"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)docker push' && ask "Confirm: Docker image push"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)dotnet (publish|ef database update)' && ask "Confirm: .NET deployment operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)terraform (apply|destroy)' && ask "Confirm: Terraform infrastructure change"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)kubectl (apply|delete|rollout)' && ask "Confirm: Kubernetes cluster operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)helm (install|upgrade|uninstall)' && ask "Confirm: Helm chart operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)az (webapp deploy|group delete|sql db delete|aks)' && ask "Confirm: Azure resource operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)aws (s3 rm|ec2 terminate|cloudformation delete|ecs update-service|lambda update)' && ask "Confirm: AWS resource operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)gcloud (app deploy|compute instances delete|sql instances delete|container)' && ask "Confirm: GCP resource operation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)docker push' && ask "Confirm: Docker image push"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)dotnet (publish|ef database update)' && ask "Confirm: .NET deployment operation"
 
 # --- Package installs (ask) ---
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)(npm|yarn|pnpm) (install|add)' && ask "Confirm: package installation"
-echo "$COMMAND" | grep -qE '(^|[;&|]\s*)pip install' && ask "Confirm: Python package installation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)(npm|yarn|pnpm) (install|add)' && ask "Confirm: package installation"
+echo "$COMMAND" | grep -qE '(^[[:space:]]*|[;&|][[:space:]]*)pip install' && ask "Confirm: Python package installation"
 
 # Default: allow
 exit 0
@@ -304,28 +304,28 @@ ask() {
 # ============================================================================
 
 # --- Git operations (PowerShell users may still call git) ---
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)git push (--force|--force-with-lease|-f)' && deny "Force push is not allowed"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)git reset --hard' && deny "Hard reset is not allowed"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)git push' && ask "Confirm: git push operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)git push (--force|--force-with-lease|-f)' && deny "Force push is not allowed"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)git reset --hard' && deny "Hard reset is not allowed"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)git push' && ask "Confirm: git push operation"
 
 # --- PowerShell-specific destructive operations ---
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)Remove-Item.*-Recurse' && ask "Confirm: recursive deletion via PowerShell"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)Remove-Item.*-Force' && ask "Confirm: force deletion via PowerShell"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)Remove-Item.*-Recurse' && ask "Confirm: recursive deletion via PowerShell"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)Remove-Item.*-Force' && ask "Confirm: force deletion via PowerShell"
 
 # --- Cloud/infra CLI (full parity with Bash hook) ---
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)terraform (apply|destroy)' && ask "Confirm: Terraform infrastructure change"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)kubectl (apply|delete|rollout)' && ask "Confirm: Kubernetes cluster operation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)helm (install|upgrade|uninstall)' && ask "Confirm: Helm chart operation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)az (webapp deploy|group delete|sql db delete|aks)' && ask "Confirm: Azure resource operation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)aws (s3 rm|ec2 terminate|cloudformation delete|ecs update-service|lambda update)' && ask "Confirm: AWS resource operation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)gcloud (app deploy|compute instances delete|sql instances delete|container)' && ask "Confirm: GCP resource operation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)docker push' && ask "Confirm: Docker image push"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)dotnet (publish|ef database update)' && ask "Confirm: .NET deployment operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)terraform (apply|destroy)' && ask "Confirm: Terraform infrastructure change"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)kubectl (apply|delete|rollout)' && ask "Confirm: Kubernetes cluster operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)helm (install|upgrade|uninstall)' && ask "Confirm: Helm chart operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)az (webapp deploy|group delete|sql db delete|aks)' && ask "Confirm: Azure resource operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)aws (s3 rm|ec2 terminate|cloudformation delete|ecs update-service|lambda update)' && ask "Confirm: AWS resource operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)gcloud (app deploy|compute instances delete|sql instances delete|container)' && ask "Confirm: GCP resource operation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)docker push' && ask "Confirm: Docker image push"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)dotnet (publish|ef database update)' && ask "Confirm: .NET deployment operation"
 
 # --- Package installs ---
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)(npm|yarn|pnpm) (install|add)' && ask "Confirm: package installation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)pip install' && ask "Confirm: Python package installation"
-echo "$COMMAND" | grep -qEi '(^|[;&|]\s*)(Install-Package|Install-Module)' && ask "Confirm: PowerShell package installation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)(npm|yarn|pnpm) (install|add)' && ask "Confirm: package installation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)pip install' && ask "Confirm: Python package installation"
+echo "$COMMAND" | grep -qEi '(^[[:space:]]*|[;&|][[:space:]]*)(Install-Package|Install-Module)' && ask "Confirm: PowerShell package installation"
 
 # Default: allow
 exit 0
