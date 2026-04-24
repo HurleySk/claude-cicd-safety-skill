@@ -1,6 +1,6 @@
 {
   "name": "cicd-safety",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Claude Code skills for CI/CD safety — Guard pre-commit review agent, Sentinel/Scout assessment, production protection hooks, environment validation, deployment guardrails.",
   "author": {
     "name": "Samuel Hurley",
